@@ -17,10 +17,10 @@ This repository contains multiple projects that fall into different category. Se
 ```csharp
 var server = new AsyncNetTcpServer(7788);
 server.ServerStarted += (s, e) => Console.WriteLine($"Server started on port: " +
-    $"{e.TcpServerStartedData.ServerPort}");
+    $"{e.ServerPort}");
 server.ConnectionEstablished += (s, e) =>
 {
-    var peer = e.ConnectionEstablishedData.RemoteTcpPeer;
+    var peer = e.RemoteTcpPeer;
     Console.WriteLine($"New connection from [{peer.IPEndPoint}]");
 
     var hello = "Hello from server!";
@@ -28,7 +28,7 @@ server.ConnectionEstablished += (s, e) =>
     peer.Post(bytes);
 };
 server.FrameArrived += (s, e) => Console.WriteLine($"Server received: " +
-    $"{System.Text.Encoding.UTF8.GetString(e.TcpFrameArrivedData.FrameData)}");
+    $"{System.Text.Encoding.UTF8.GetString(e.FrameData)}");
 await server.StartAsync(CancellationToken.None);
 ```
 #### TCP Client
@@ -36,7 +36,7 @@ await server.StartAsync(CancellationToken.None);
 var client = new AsyncNetTcpClient("127.0.0.1", 7788);
 client.ConnectionEstablished += (s, e) =>
 {
-    var peer = e.ConnectionEstablishedData.RemoteTcpPeer;
+    var peer = e.RemoteTcpPeer;
     Console.WriteLine($"New connection from [{peer.IPEndPoint}]");
 
     var hello = "Hello from client!";
@@ -44,7 +44,7 @@ client.ConnectionEstablished += (s, e) =>
     peer.Post(bytes);
 };
 client.FrameArrived += (s, e) => Console.WriteLine($"Client received: " +
-    $"{System.Text.Encoding.UTF8.GetString(e.TcpFrameArrivedData.FrameData)}");
+    $"{System.Text.Encoding.UTF8.GetString(e.FrameData)}");
 await client.StartAsync(CancellationToken.None);
 ```
 ## AsyncNet.Udp
@@ -57,17 +57,17 @@ await client.StartAsync(CancellationToken.None);
 #### UDP Server
 ```csharp
 var server = new AsyncNetUdpServer(7788);
-server.ServerStarted += (s, e) => Console.WriteLine($"Server started on port: {e.UdpServerStartedData.ServerPort}");
+server.ServerStarted += (s, e) => Console.WriteLine($"Server started on port: {e.ServerPort}");
 server.UdpPacketArrived += (s, e) =>
 {
     Console.WriteLine($"Server received: " +
-        $"{System.Text.Encoding.UTF8.GetString(e.UdpPacketArrivedData.PacketData)} " +
+        $"{System.Text.Encoding.UTF8.GetString(e.PacketData)} " +
         "from " +
-        $"[{e.UdpPacketArrivedData.RemoteEndPoint}]");
+        $"[{e.RemoteEndPoint}]");
 
     var response = "Response!";
     var bytes = System.Text.Encoding.UTF8.GetBytes(response);
-    server.Post(bytes, e.UdpPacketArrivedData.RemoteEndPoint);
+    server.Post(bytes, e.RemoteEndPoint);
 };
 await server.StartAsync(CancellationToken.None);
 ```
@@ -79,14 +79,14 @@ client.ClientReady += (s, e) =>
     var hello = "Hello!";
     var bytes = System.Text.Encoding.UTF8.GetBytes(hello);
 
-    e.UdpClientReadyData.Client.Post(bytes);
+    e.Client.Post(bytes);
 };
 client.UdpPacketArrived += (s, e) =>
 {
     Console.WriteLine($"Client received: " +
-        $"{System.Text.Encoding.UTF8.GetString(e.UdpPacketArrivedData.PacketData)} " +
+        $"{System.Text.Encoding.UTF8.GetString(e.PacketData)} " +
         "from " +
-        $"[{e.UdpPacketArrivedData.RemoteEndPoint}]");
+        $"[{e.RemoteEndPoint}]");
 };
 await client.StartAsync(CancellationToken.None);
 ```
