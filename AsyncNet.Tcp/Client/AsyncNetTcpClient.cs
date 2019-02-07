@@ -4,23 +4,19 @@ using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Reactive.Linq;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using AsyncNet.Core.Error;
-using AsyncNet.Core.Error.SystemEvent;
+using AsyncNet.Core.Events;
 using AsyncNet.Core.Extensions;
-using AsyncNet.Tcp.Client.SystemEvent;
+using AsyncNet.Tcp.Client.Events;
 using AsyncNet.Tcp.Connection;
-using AsyncNet.Tcp.Connection.SystemEvent;
-using AsyncNet.Tcp.Error;
-using AsyncNet.Tcp.Error.SystemEvent;
+using AsyncNet.Tcp.Connection.Events;
 using AsyncNet.Tcp.Extensions;
 using AsyncNet.Tcp.Remote;
-using AsyncNet.Tcp.Remote.SystemEvent;
+using AsyncNet.Tcp.Remote.Events;
 
 namespace AsyncNet.Tcp.Client
 {
@@ -80,17 +76,17 @@ namespace AsyncNet.Tcp.Client
         /// <summary>
         /// Fires when there was a problem with the client
         /// </summary>
-        public event EventHandler<TcpClientErrorEventArgs> ClientErrorOccured;
+        public event EventHandler<TcpClientExceptionEventArgs> ClientExceptionOccured;
 
         /// <summary>
         /// Fires when there was a problem while handling communication with the server
         /// </summary>
-        public event EventHandler<RemoteTcpPeerErrorEventArgs> RemoteTcpPeerErrorOccured;
+        public event EventHandler<RemoteTcpPeerExceptionEventArgs> RemoteTcpPeerExceptionOccured;
 
         /// <summary>
-        /// Fires when unhandled error occured - e.g. when event subscriber throws an exception
+        /// Fires when unhandled exception occured - e.g. when event subscriber throws an exception
         /// </summary>
-        public event EventHandler<UnhandledErrorEventArgs> UnhandledErrorOccured;
+        public event EventHandler<ExceptionEventArgs> UnhandledExceptionOccured;
 
         /// <summary>
         /// Fires when connection with the server is established
@@ -106,76 +102,6 @@ namespace AsyncNet.Tcp.Client
         /// Fires when connection with the server closes
         /// </summary>
         public event EventHandler<ConnectionClosedEventArgs> ConnectionClosed;
-
-        /// <summary>
-        /// Produces an element when client started running, but it's not connected yet to the server
-        /// </summary>
-        public IObservable<TcpClientStartedData> WhenClientStarted =>
-            Observable.FromEventPattern<TcpClientStartedEventArgs>(
-                h => this.ClientStarted += h, h => this.ClientStarted -= h)
-            .Select(x => x.EventArgs.TcpClientStartedData);
-
-        /// <summary>
-        /// Produces an element when client stopped running
-        /// </summary>
-        public IObservable<TcpClientStoppedData> WhenClientStopped =>
-            Observable.FromEventPattern<TcpClientStoppedEventArgs>(
-                h => this.ClientStopped += h, h => this.ClientStopped -= h)
-            .Select(x => x.EventArgs.TcpClientStoppedData);
-
-        /// <summary>
-        /// Produces an element when there was a problem with the client
-        /// </summary>
-        public IObservable<ErrorData> WhenClientErrorOccured =>
-            Observable.FromEventPattern<TcpClientErrorEventArgs>(
-                h => this.ClientErrorOccured += h, h => this.ClientErrorOccured -= h)
-            .TakeUntil(this.WhenClientStopped)
-            .Select(x => x.EventArgs.ErrorData);
-
-        /// <summary>
-        /// Produces an element when there was a problem while handling communication with the server
-        /// </summary>
-        public IObservable<RemoteTcpPeerErrorData> WhenRemoteTcpPeerErrorOccured => Observable.FromEventPattern<RemoteTcpPeerErrorEventArgs>(
-                h => this.RemoteTcpPeerErrorOccured += h,
-                h => this.RemoteTcpPeerErrorOccured -= h)
-            .TakeUntil(this.WhenClientStopped)
-            .Select(x => x.EventArgs.ErrorData);
-
-        /// <summary>
-        /// Produces an element when unhandled error occured - e.g. when event subscriber throws an exception
-        /// </summary>
-        public IObservable<ErrorData> WhenUnhandledErrorOccured => Observable.FromEventPattern<UnhandledErrorEventArgs>(
-                h => this.UnhandledErrorOccured += h,
-                h => this.UnhandledErrorOccured -= h)
-            .TakeUntil(this.WhenClientStopped)
-            .Select(x => x.EventArgs.ErrorData);
-
-        /// <summary>
-        /// Produces an element when connection with the server is established
-        /// </summary>
-        public IObservable<ConnectionEstablishedData> WhenConnectionEstablished =>
-            Observable.FromEventPattern<ConnectionEstablishedEventArgs>(
-                h => this.ConnectionEstablished += h, h => this.ConnectionEstablished -= h)
-            .TakeUntil(this.WhenClientStopped)
-            .Select(x => x.EventArgs.ConnectionEstablishedData);
-
-        /// <summary>
-        /// Fires when TCP frame arrived from the server
-        /// </summary>
-        public IObservable<TcpFrameArrivedData> WhenFrameArrived =>
-            Observable.FromEventPattern<TcpFrameArrivedEventArgs>(
-                h => this.FrameArrived += h, h => this.FrameArrived -= h)
-            .TakeUntil(this.WhenClientStopped)
-            .Select(x => x.EventArgs.TcpFrameArrivedData);
-
-        /// <summary>
-        /// Produces an element when connection with the server closes
-        /// </summary>
-        public IObservable<ConnectionClosedData> WhenConnectionClosed =>
-            Observable.FromEventPattern<ConnectionClosedEventArgs>(
-                h => this.ConnectionClosed += h, h => this.ConnectionClosed -= h)
-            .TakeUntil(this.WhenClientStopped)
-            .Select(x => x.EventArgs.ConnectionClosedData);
 
         /// <summary>
         /// Asynchronously starts the client that run until connection with the server is closed
@@ -199,7 +125,7 @@ namespace AsyncNet.Tcp.Client
 
             this.Config.ConfigureTcpClientCallback?.Invoke(tcpClient);
 
-            this.OnClientStarted(new TcpClientStartedEventArgs(new TcpClientStartedData(this.Config.TargetHostname, this.Config.TargetPort)));
+            this.OnClientStarted(new TcpClientStartedEventArgs(this.Config.TargetHostname, this.Config.TargetPort));
 
             try
             {
@@ -207,15 +133,15 @@ namespace AsyncNet.Tcp.Client
             }
             catch (OperationCanceledException)
             {
-                this.OnClientStopped(new TcpClientStoppedEventArgs(new TcpClientStoppedData(this.Config.TargetHostname, this.Config.TargetPort)));
+                this.OnClientStopped(new TcpClientStoppedEventArgs());
 
                 return;
             }
             catch (Exception ex)
             {
-                this.OnClientErrorOccured(new TcpClientErrorEventArgs(new ErrorData(ex)));
+                this.OnClientExceptionOccured(new TcpClientExceptionEventArgs(ex));
 
-                this.OnClientStopped(new TcpClientStoppedEventArgs(new TcpClientStoppedData(this.Config.TargetHostname, this.Config.TargetPort)));
+                this.OnClientStopped(new TcpClientStoppedEventArgs());
 
                 return;
             }
@@ -226,15 +152,15 @@ namespace AsyncNet.Tcp.Client
             }
             catch (OperationCanceledException)
             {
-                this.OnClientStopped(new TcpClientStoppedEventArgs(new TcpClientStoppedData(this.Config.TargetHostname, this.Config.TargetPort)));
+                this.OnClientStopped(new TcpClientStoppedEventArgs());
 
                 return;
             }
             catch (Exception ex)
             {
-                this.OnClientErrorOccured(new TcpClientErrorEventArgs(new ErrorData(ex)));
+                this.OnClientExceptionOccured(new TcpClientExceptionEventArgs(ex));
 
-                this.OnClientStopped(new TcpClientStoppedEventArgs(new TcpClientStoppedData(this.Config.TargetHostname, this.Config.TargetPort)));
+                this.OnClientStopped(new TcpClientStoppedEventArgs());
 
                 return;
             }
@@ -245,7 +171,7 @@ namespace AsyncNet.Tcp.Client
             }
             finally
             {
-                this.OnClientStopped(new TcpClientStoppedEventArgs(new TcpClientStoppedData(this.Config.TargetHostname, this.Config.TargetPort)));
+                this.OnClientStopped(new TcpClientStoppedEventArgs());
             }
         }
 
@@ -320,9 +246,9 @@ namespace AsyncNet.Tcp.Client
             }
             catch (Exception ex)
             {
-                var remoteTcpPeerErrorEventArgs = new RemoteTcpPeerErrorEventArgs(new RemoteTcpPeerErrorData(outgoingMessage.RemoteTcpPeer, ex));
+                var remoteTcpPeerExceptionEventArgs = new RemoteTcpPeerExceptionEventArgs(outgoingMessage.RemoteTcpPeer, ex);
 
-                this.OnRemoteTcpPeerErrorOccured(remoteTcpPeerErrorEventArgs);
+                this.OnRemoteTcpPeerExceptionOccured(remoteTcpPeerExceptionEventArgs);
             }
         }
 
@@ -354,8 +280,8 @@ namespace AsyncNet.Tcp.Client
                 }
                 catch (AuthenticationException ex)
                 {
-                    var clientErrorEventArgs = new TcpClientErrorEventArgs(new ErrorData(ex));
-                    this.OnClientErrorOccured(clientErrorEventArgs);
+                    var clientExceptionEventArgs = new TcpClientExceptionEventArgs(ex);
+                    this.OnClientExceptionOccured(clientExceptionEventArgs);
 
                     sendQueue.Complete();
                     sslStream?.Dispose();
@@ -370,7 +296,7 @@ namespace AsyncNet.Tcp.Client
 
                 using (remoteTcpPeer)
                 {
-                    var connectionEstablishedEventArgs = new ConnectionEstablishedEventArgs(new ConnectionEstablishedData(remoteTcpPeer));
+                    var connectionEstablishedEventArgs = new ConnectionEstablishedEventArgs(remoteTcpPeer);
                     this.OnConnectionEstablished(connectionEstablishedEventArgs);
 
                     try
@@ -379,9 +305,9 @@ namespace AsyncNet.Tcp.Client
                     }
                     catch (Exception ex)
                     {
-                        var unhandledErrorEventArgs = new UnhandledErrorEventArgs(new ErrorData(ex));
+                        var unhandledExceptionEventArgs = new ExceptionEventArgs(ex);
 
-                        this.OnUnhandledError(unhandledErrorEventArgs);
+                        this.OnUnhandledException(unhandledExceptionEventArgs);
                     }
                     finally
                     {
@@ -489,12 +415,12 @@ namespace AsyncNet.Tcp.Client
             }
             catch (Exception ex)
             {
-                var unhandledErrorEventArgs = new UnhandledErrorEventArgs(new ErrorData(ex));
+                var unhandledExceptionEventArgs = new ExceptionEventArgs(ex);
 
-                this.OnUnhandledError(unhandledErrorEventArgs);
+                this.OnUnhandledException(unhandledExceptionEventArgs);
             }
 
-            var connectionClosedEventArgs = new ConnectionClosedEventArgs(new ConnectionClosedData(remoteTcpPeer, remoteTcpPeer.ConnectionCloseReason));
+            var connectionClosedEventArgs = new ConnectionClosedEventArgs(remoteTcpPeer, remoteTcpPeer.ConnectionCloseReason);
             this.OnConnectionClosed(remoteTcpPeer, connectionClosedEventArgs);
         }
 
@@ -524,8 +450,7 @@ namespace AsyncNet.Tcp.Client
                     continue;
                 }
 
-                var tcpFrameArrivedData = new TcpFrameArrivedData(remoteTcpPeer, readFrameResult.FrameData);
-                var frameArrivedEventArgs = new TcpFrameArrivedEventArgs(tcpFrameArrivedData);
+                var frameArrivedEventArgs = new TcpFrameArrivedEventArgs(remoteTcpPeer, readFrameResult.FrameData);
 
                 this.OnFrameArrived(remoteTcpPeer, frameArrivedEventArgs);
             }
@@ -558,9 +483,9 @@ namespace AsyncNet.Tcp.Client
             }
             catch (Exception ex)
             {
-                var unhandledErrorEventArgs = new UnhandledErrorEventArgs(new ErrorData(ex));
+                var unhandledExceptionEventArgs = new ExceptionEventArgs(ex);
 
-                this.OnUnhandledError(unhandledErrorEventArgs);
+                this.OnUnhandledException(unhandledExceptionEventArgs);
             }
         }
 
@@ -573,25 +498,25 @@ namespace AsyncNet.Tcp.Client
             }
             catch (Exception ex)
             {
-                var unhandledErrorEventArgs = new UnhandledErrorEventArgs(new ErrorData(ex));
+                var unhandledExceptionEventArgs = new ExceptionEventArgs(ex);
 
-                this.OnUnhandledError(unhandledErrorEventArgs);
+                this.OnUnhandledException(unhandledExceptionEventArgs);
             }
         }
 
-        protected virtual void OnClientErrorOccured(TcpClientErrorEventArgs e)
+        protected virtual void OnClientExceptionOccured(TcpClientExceptionEventArgs e)
         {
-            this.ClientErrorOccured?.Invoke(this, e);
+            this.ClientExceptionOccured?.Invoke(this, e);
         }
 
-        protected virtual void OnRemoteTcpPeerErrorOccured(RemoteTcpPeerErrorEventArgs e)
+        protected virtual void OnRemoteTcpPeerExceptionOccured(RemoteTcpPeerExceptionEventArgs e)
         {
-            this.RemoteTcpPeerErrorOccured?.Invoke(this, e);
+            this.RemoteTcpPeerExceptionOccured?.Invoke(this, e);
         }
 
-        protected virtual void OnUnhandledError(UnhandledErrorEventArgs e)
+        protected virtual void OnUnhandledException(ExceptionEventArgs e)
         {
-            this.UnhandledErrorOccured?.Invoke(this, e);
+            this.UnhandledExceptionOccured?.Invoke(this, e);
         }
     }
 }

@@ -3,12 +3,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncNet.Core.Error;
-using AsyncNet.Udp.Error;
-using AsyncNet.Udp.Error.SystemEvent;
-using AsyncNet.Udp.Remote;
-using AsyncNet.Udp.Remote.SystemEvent;
-using AsyncNet.Udp.Server.SystemEvent;
+using AsyncNet.Udp.Error.Events;
+using AsyncNet.Udp.Remote.Events;
+using AsyncNet.Udp.Server.Events;
 
 namespace AsyncNet.Udp.Server
 {
@@ -23,34 +20,9 @@ namespace AsyncNet.Udp.Server
         UdpClient UdpClient { get; }
 
         /// <summary>
-        /// Produces an element when there was a problemw with the server
-        /// </summary>
-        IObservable<ErrorData> WhenServerErrorOccured { get; }
-
-        /// <summary>
-        /// Produces an element when server started running
-        /// </summary>
-        IObservable<UdpServerStartedData> WhenServerStarted { get; }
-
-        /// <summary>
-        /// Produces an element when server stopped running 
-        /// </summary>
-        IObservable<UdpServerStoppedData> WhenServerStopped { get; }
-
-        /// <summary>
-        /// Produces an element when packet arrived from particular client/peer
-        /// </summary>
-        IObservable<UdpPacketArrivedData> WhenUdpPacketArrived { get; }
-
-        /// <summary>
-        /// Produces an element when there was a problem while sending packet to the target client/peer
-        /// </summary>
-        IObservable<UdpSendErrorData> WhenUdpSendErrorOccured { get; }
-
-        /// <summary>
         /// Fires when there was a problemw with the server
         /// </summary>
-        event EventHandler<UdpServerErrorEventArgs> ServerErrorOccured;
+        event EventHandler<UdpServerExceptionEventArgs> ServerExceptionOccured;
 
         /// <summary>
         /// Fires when server started running

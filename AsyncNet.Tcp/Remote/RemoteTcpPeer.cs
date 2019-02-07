@@ -2,15 +2,14 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using AsyncNet.Core;
 using AsyncNet.Tcp.Connection;
-using AsyncNet.Tcp.Connection.SystemEvent;
+using AsyncNet.Tcp.Connection.Events;
 using AsyncNet.Tcp.Defragmentation;
-using AsyncNet.Tcp.Remote.SystemEvent;
+using AsyncNet.Tcp.Remote.Events;
 
 namespace AsyncNet.Tcp.Remote
 {
@@ -78,23 +77,6 @@ namespace AsyncNet.Tcp.Remote
         /// Remote tcp peer endpoint
         /// </summary>
         public IPEndPoint IPEndPoint { get; }
-
-        /// <summary>
-        /// Produces an element when TCP frame from this client/peer arrived
-        /// </summary>
-        public IObservable<TcpFrameArrivedData> WhenFrameArrived => Observable.FromEventPattern<TcpFrameArrivedEventArgs>(
-                h => this.FrameArrived += h,
-                h => this.FrameArrived -= h)
-            .TakeUntil(this.WhenConnectionClosed)
-            .Select(x => x.EventArgs.TcpFrameArrivedData);
-
-        /// <summary>
-        /// Produces an element when connection with this client/peer closes
-        /// </summary>
-        public IObservable<ConnectionClosedData> WhenConnectionClosed => Observable.FromEventPattern<ConnectionClosedEventArgs>(
-                h => this.ConnectionClosed += h,
-                h => this.ConnectionClosed -= h)
-            .Select(x => x.EventArgs.ConnectionClosedData);
 
         /// <summary>
         /// You can set it to your own custom object that implements <see cref="IDisposable" />. Your custom object will be disposed with this remote peer
@@ -324,7 +306,7 @@ namespace AsyncNet.Tcp.Remote
         public virtual ConnectionCloseReason ConnectionCloseReason
         {
             get => this.connectionCloseReason;
-            set => this.connectionCloseReason = this.connectionCloseReason != ConnectionCloseReason.NoReason ? this.connectionCloseReason : value;
+            set => this.connectionCloseReason = this.connectionCloseReason != ConnectionCloseReason.Unknown ? this.connectionCloseReason : value;
         }
 
         public virtual void OnFrameArrived(TcpFrameArrivedEventArgs e)

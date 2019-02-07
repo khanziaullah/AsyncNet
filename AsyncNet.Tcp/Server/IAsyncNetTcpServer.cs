@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncNet.Core.Error;
-using AsyncNet.Core.Error.SystemEvent;
-using AsyncNet.Tcp.Connection;
-using AsyncNet.Tcp.Connection.SystemEvent;
-using AsyncNet.Tcp.Error;
-using AsyncNet.Tcp.Error.SystemEvent;
-using AsyncNet.Tcp.Remote;
-using AsyncNet.Tcp.Remote.SystemEvent;
-using AsyncNet.Tcp.Server.SystemEvent;
+using AsyncNet.Core.Events;
+using AsyncNet.Tcp.Connection.Events;
+using AsyncNet.Tcp.Remote.Events;
+using AsyncNet.Tcp.Server.Events;
 
 namespace AsyncNet.Tcp.Server
 {
@@ -18,46 +13,6 @@ namespace AsyncNet.Tcp.Server
     /// </summary>
     public interface IAsyncNetTcpServer
     {
-        /// <summary>
-        /// Produces an element when connection closes for particular client/peer
-        /// </summary>
-        IObservable<ConnectionClosedData> WhenConnectionClosed { get; }
-        
-        /// <summary>
-        /// Produces an element when new client/peer connects to the server
-        /// </summary>
-        IObservable<ConnectionEstablishedData> WhenConnectionEstablished { get; }
-
-        /// <summary>
-        /// Produces an element when TCP frame arrived from particular client/peer
-        /// </summary>
-        IObservable<TcpFrameArrivedData> WhenFrameArrived { get; }
-
-        /// <summary>
-        /// Produces an element when there was an error while handling particular client/peer
-        /// </summary>
-        IObservable<RemoteTcpPeerErrorData> WhenRemoteTcpPeerErrorOccured { get; }
-
-        /// <summary>
-        /// Produces an element when there was a problem with the server
-        /// </summary>
-        IObservable<ErrorData> WhenServerErrorOccured { get; }
-
-        /// <summary>
-        /// Produces an element when server started running
-        /// </summary>
-        IObservable<TcpServerStartedData> WhenServerStarted { get; }
-        
-        /// <summary>
-        /// Produces an element when server stopped running 
-        /// </summary>
-        IObservable<TcpServerStoppedData> WhenServerStopped { get; }
-
-        /// <summary>
-        /// Produces an element when unhandled error occured - e.g. when event subscriber throws an exception
-        /// </summary>
-        IObservable<ErrorData> WhenUnhandledErrorOccured { get; }
-
         /// <summary>
         /// Fires when connection closes for particular client/peer
         /// </summary>
@@ -74,14 +29,14 @@ namespace AsyncNet.Tcp.Server
         event EventHandler<TcpFrameArrivedEventArgs> FrameArrived;
 
         /// <summary>
-        /// Fires when there was an error while handling particular client/peer
+        /// Fires when there was an exception while handling particular client/peer
         /// </summary>
-        event EventHandler<RemoteTcpPeerErrorEventArgs> RemoteTcpPeerErrorOccured;
+        event EventHandler<RemoteTcpPeerExceptionEventArgs> RemoteTcpPeerExceptionOccured;
 
         /// <summary>
         /// Fires when there was a problem with the server
         /// </summary>
-        event EventHandler<TcpServerErrorEventArgs> ServerErrorOccured;
+        event EventHandler<TcpServerExceptionEventArgs> ServerExceptionOccured;
 
         /// <summary>
         /// Fires when server started running
@@ -94,9 +49,9 @@ namespace AsyncNet.Tcp.Server
         event EventHandler<TcpServerStoppedEventArgs> ServerStopped;
 
         /// <summary>
-        /// Fires when unhandled error occured - e.g. when event subscriber throws an exception
+        /// Fires when unhandled exception occured - e.g. when event subscriber throws an exception
         /// </summary>
-        event EventHandler<UnhandledErrorEventArgs> UnhandledErrorOccured;
+        event EventHandler<ExceptionEventArgs> UnhandledExceptionOccured;
 
         /// <summary>
         /// Asynchronously starts the server that will run indefinitely

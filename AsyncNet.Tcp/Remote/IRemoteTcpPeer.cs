@@ -5,9 +5,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncNet.Tcp.Connection;
-using AsyncNet.Tcp.Connection.SystemEvent;
+using AsyncNet.Tcp.Connection.Events;
 using AsyncNet.Tcp.Defragmentation;
-using AsyncNet.Tcp.Remote.SystemEvent;
+using AsyncNet.Tcp.Remote.Events;
 
 namespace AsyncNet.Tcp.Remote
 {
@@ -25,16 +25,6 @@ namespace AsyncNet.Tcp.Remote
         /// Fires when TCP frame from this client/peer arrived
         /// </summary>
         event EventHandler<TcpFrameArrivedEventArgs> FrameArrived;
-
-        /// <summary>
-        /// Produces an element when connection with this client/peer closes
-        /// </summary>
-        IObservable<ConnectionClosedData> WhenConnectionClosed { get; }
-
-        /// <summary>
-        /// Produces an element when TCP frame from this client/peer arrived
-        /// </summary>
-        IObservable<TcpFrameArrivedData> WhenFrameArrived { get; }
 
         /// <summary>
         /// You can set it to your own custom object that implements <see cref="IDisposable"/>. Your custom object will be disposed with this remote peer

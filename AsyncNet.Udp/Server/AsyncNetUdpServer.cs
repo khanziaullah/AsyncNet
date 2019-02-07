@@ -3,15 +3,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Reactive.Linq;
-using AsyncNet.Udp.Error.SystemEvent;
-using AsyncNet.Udp.Server.SystemEvent;
-using AsyncNet.Core.Error;
-using AsyncNet.Udp.Extensions;
-using AsyncNet.Udp.Remote.SystemEvent;
-using AsyncNet.Udp.Remote;
 using System.Threading.Tasks.Dataflow;
-using AsyncNet.Udp.Error;
+using AsyncNet.Udp.Extensions;
+using AsyncNet.Udp.Remote;
+using AsyncNet.Udp.Server.Events;
+using AsyncNet.Udp.Error.Events;
+using AsyncNet.Udp.Remote.Events;
 
 namespace AsyncNet.Udp.Server
 {
@@ -62,7 +59,7 @@ namespace AsyncNet.Udp.Server
         /// <summary>
         /// Fires when there was a problemw with the server
         /// </summary>
-        public event EventHandler<UdpServerErrorEventArgs> ServerErrorOccured;
+        public event EventHandler<UdpServerExceptionEventArgs> ServerExceptionOccured;
 
         /// <summary>
         /// Fires when packet arrived from particular client/peer
@@ -73,49 +70,6 @@ namespace AsyncNet.Udp.Server
         /// Fires when there was a problem while sending packet to the target client/peer
         /// </summary>
         public event EventHandler<UdpSendErrorEventArgs> UdpSendErrorOccured;
-
-        /// <summary>
-        /// Produces an element when server started running
-        /// </summary>
-        public IObservable<UdpServerStartedData> WhenServerStarted =>
-            Observable.FromEventPattern<UdpServerStartedEventArgs>(
-                h => this.ServerStarted += h, h => this.ServerStarted -= h)
-            .Select(x => x.EventArgs.UdpServerStartedData);
-
-        /// <summary>
-        /// Produces an element when server stopped running 
-        /// </summary>
-        public IObservable<UdpServerStoppedData> WhenServerStopped =>
-            Observable.FromEventPattern<UdpServerStoppedEventArgs>(
-                h => this.ServerStopped += h, h => this.ServerStopped -= h)
-            .Select(x => x.EventArgs.UdpServerStoppedData);
-
-        /// <summary>
-        /// Produces an element when there was a problemw with the server
-        /// </summary>
-        public IObservable<ErrorData> WhenServerErrorOccured =>
-            Observable.FromEventPattern<UdpServerErrorEventArgs>(
-                h => this.ServerErrorOccured += h, h => this.ServerErrorOccured -= h)
-            .TakeUntil(this.WhenServerStopped)
-            .Select(x => x.EventArgs.ErrorData);
-
-        /// <summary>
-        /// Produces an element when packet arrived from particular client/peer
-        /// </summary>
-        public IObservable<UdpPacketArrivedData> WhenUdpPacketArrived =>
-            Observable.FromEventPattern<UdpPacketArrivedEventArgs>(
-                h => this.UdpPacketArrived += h, h => this.UdpPacketArrived -= h)
-            .TakeUntil(this.WhenServerStopped)
-            .Select(x => x.EventArgs.UdpPacketArrivedData);
-
-        /// <summary>
-        /// Produces an element when there was a problem while sending packet to the target client/peer
-        /// </summary>
-        public IObservable<UdpSendErrorData> WhenUdpSendErrorOccured =>
-            Observable.FromEventPattern<UdpSendErrorEventArgs>(
-                h => this.UdpSendErrorOccured += h, h => this.UdpSendErrorOccured -= h)
-            .TakeUntil(this.WhenServerStopped)
-            .Select(x => x.EventArgs.UdpSendErrorData);
 
         /// <summary>
         /// Underlying <see cref="UdpClient" />
@@ -144,7 +98,7 @@ namespace AsyncNet.Udp.Server
             }
             catch (Exception ex)
             {
-                this.OnServerErrorOccured(new UdpServerErrorEventArgs(new ErrorData(ex)));
+                this.OnServerExceptionOccured(new UdpServerExceptionEventArgs(ex));
 
                 return;
             }
@@ -163,12 +117,12 @@ namespace AsyncNet.Udp.Server
             {
                 await Task.WhenAll(
                     this.ReceiveAsync(cancellationToken),
-                    Task.Run(() => this.OnServerStarted(new UdpServerStartedEventArgs(new UdpServerStartedData(this.Config.IPAddress, this.Config.Port)))))
+                    Task.Run(() => this.OnServerStarted(new UdpServerStartedEventArgs(this.Config.IPAddress, this.Config.Port))))
                     .ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                this.OnServerErrorOccured(new UdpServerErrorEventArgs(new ErrorData(ex)));
+                this.OnServerExceptionOccured(new UdpServerExceptionEventArgs(ex));
 
                 return;
             }
@@ -179,7 +133,7 @@ namespace AsyncNet.Udp.Server
                     this.Config.LeaveMulticastGroupCallback?.Invoke(this.UdpClient);
                 }
 
-                this.OnServerStopped(new UdpServerStoppedEventArgs(new UdpServerStoppedData(this.Config.IPAddress, this.Config.Port)));
+                this.OnServerStopped(new UdpServerStoppedEventArgs());
 
                 this.SendQueueActionBlock.Complete();
                 this.UdpClient.Dispose();
@@ -279,7 +233,6 @@ namespace AsyncNet.Udp.Server
 
                     result = false;
                 }
-
             }
 
             return result;
@@ -390,7 +343,7 @@ namespace AsyncNet.Udp.Server
                 {
                     var result = await this.UdpClient.ReceiveWithCancellationTokenAsync(cancellationToken).ConfigureAwait(false);
 
-                    this.OnUdpPacketArrived(new UdpPacketArrivedEventArgs(new UdpPacketArrivedData(result.RemoteEndPoint, result.Buffer)));
+                    this.OnUdpPacketArrived(new UdpPacketArrivedEventArgs(result.RemoteEndPoint, result.Buffer));
                 }
                 catch (OperationCanceledException)
                 {
@@ -433,7 +386,7 @@ namespace AsyncNet.Udp.Server
                 {
                     packet.SendTaskCompletionSource.TrySetResult(false);
 
-                    this.OnUdpSendErrorOccured(new UdpSendErrorEventArgs(new UdpSendErrorData(packet, numberOfBytesSent, null)));
+                    this.OnUdpSendErrorOccured(new UdpSendErrorEventArgs(packet, numberOfBytesSent, null));
                 }
                 else
                 {
@@ -446,7 +399,7 @@ namespace AsyncNet.Udp.Server
             }
             catch (Exception ex)
             {
-                this.OnUdpSendErrorOccured(new UdpSendErrorEventArgs(new UdpSendErrorData(packet, 0, ex)));
+                this.OnUdpSendErrorOccured(new UdpSendErrorEventArgs(packet, 0, ex));
             }
         }
 
@@ -460,9 +413,9 @@ namespace AsyncNet.Udp.Server
             this.ServerStopped?.Invoke(this, e);
         }
 
-        protected virtual void OnServerErrorOccured(UdpServerErrorEventArgs e)
+        protected virtual void OnServerExceptionOccured(UdpServerExceptionEventArgs e)
         {
-            this.ServerErrorOccured?.Invoke(this, e);
+            this.ServerExceptionOccured?.Invoke(this, e);
         }
 
         protected virtual void OnUdpPacketArrived(UdpPacketArrivedEventArgs e)
