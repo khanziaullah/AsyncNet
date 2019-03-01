@@ -37,7 +37,7 @@ var client = new AsyncNetTcpClient("127.0.0.1", 7788);
 client.ConnectionEstablished += (s, e) =>
 {
     var peer = e.RemoteTcpPeer;
-    Console.WriteLine($"New connection from [{peer.IPEndPoint}]");
+    Console.WriteLine($"Connected to [{peer.IPEndPoint}]");
 
     var hello = "Hello from client!";
     var bytes = System.Text.Encoding.UTF8.GetBytes(hello);
