@@ -1,5 +1,7 @@
 # AsyncNet
 Asynchronous network library for .NET
+## Documentation
+[Wiki](https://github.com/bartlomiej-stys/AsyncNet/wiki)
 ## Purpose
 The primary purpose of this library is to provide easy to use interface for TCP and UDP networking in C#
 ## Getting started
