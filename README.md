@@ -47,6 +47,33 @@ client.FrameArrived += (s, e) => Console.WriteLine($"Client received: " +
     $"{System.Text.Encoding.UTF8.GetString(e.FrameData)}");
 await client.StartAsync(CancellationToken.None);
 ```
+#### Awaitaible TCP Client
+```
+var client = new AsyncNetTcpClient("127.0.0.1", 7788);
+var awaitaibleClient = new AwaitaibleAsyncNetTcpClient(client);
+
+try
+{
+    var awaitaiblePeer = await awaitaibleClient.ConnectAsync();
+
+    var hello = "Hello from client!";
+    var bytes = System.Text.Encoding.UTF8.GetBytes(hello);
+
+    await awaitaiblePeer.RemoteTcpPeer.SendAsync(bytes);
+    var response = await awaitaiblePeer.ReadFrameAsync();
+
+    Console.WriteLine($"Client received: " +
+        $"{System.Text.Encoding.UTF8.GetString(response)}");
+
+    awaitaiblePeer.RemoteTcpPeer.Disconnect(AsyncNet.Tcp.Connection.ConnectionCloseReason.LocalShutdown);
+}
+catch (Exception ex)
+{
+    Console.WriteLine(ex);
+    return;
+}
+```
+
 ## AsyncNet.Udp
 ### Installation
 [NuGet](https://www.nuget.org/packages/AsyncNet.Udp/)
