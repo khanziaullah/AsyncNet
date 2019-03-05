@@ -48,7 +48,7 @@ client.FrameArrived += (s, e) => Console.WriteLine($"Client received: " +
 await client.StartAsync(CancellationToken.None);
 ```
 #### Awaitaible TCP Client
-```
+```csharp
 var client = new AsyncNetTcpClient("127.0.0.1", 7788);
 var awaitaibleClient = new AwaitaibleAsyncNetTcpClient(client);
 
