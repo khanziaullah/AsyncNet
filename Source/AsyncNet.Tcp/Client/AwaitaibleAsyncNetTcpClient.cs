@@ -7,6 +7,7 @@ namespace AsyncNet.Tcp.Client
     public class AwaitaibleAsyncNetTcpClient : IAwaitaibleAsyncNetTcpClient
     {
         private readonly int frameBufferBoundedCapacity;
+        private readonly CancellationTokenSource cts;
 
         private TaskCompletionSource<IAwaitaibleRemoteTcpPeer> tcsConnection;
 
@@ -16,6 +17,7 @@ namespace AsyncNet.Tcp.Client
             this.Client.ConnectionEstablished += ConnectionEstablishedCallback;
             this.Client.ClientStopped += ClientStoppedCallback;
             this.frameBufferBoundedCapacity = frameBufferBoundedCapacity;
+            this.cts = new CancellationTokenSource();
         }
 
         public AsyncNetTcpClient Client { get; }
@@ -24,6 +26,8 @@ namespace AsyncNet.Tcp.Client
         {
             this.Client.ClientStopped -= ClientStoppedCallback;
             this.Client.ConnectionEstablished -= ConnectionEstablishedCallback;
+            this.cts.Cancel();
+            this.cts.Dispose();
         }
 
         public virtual Task<IAwaitaibleRemoteTcpPeer> ConnectAsync() => this.ConnectAsync(CancellationToken.None);
@@ -32,7 +36,7 @@ namespace AsyncNet.Tcp.Client
         {
             this.tcsConnection = new TaskCompletionSource<IAwaitaibleRemoteTcpPeer>();
 
-            _ = this.Client.StartAsync();
+            _ = this.Client.StartAsync(this.cts.Token);
 
             using (var ctr = cancellationToken.Register(() => this.tcsConnection.TrySetCanceled(cancellationToken), false))
             {
