@@ -67,8 +67,6 @@ using (var awaitaibleClient = new AwaitaibleAsyncNetTcpClient(client))
 
         Console.WriteLine($"Client received: " +
             $"{System.Text.Encoding.UTF8.GetString(response)}");
-
-        awaitaiblePeer.RemoteTcpPeer.Disconnect(AsyncNet.Tcp.Connection.ConnectionCloseReason.LocalShutdown);
     }
     catch (Exception ex)
     {
