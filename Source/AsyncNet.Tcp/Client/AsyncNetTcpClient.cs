@@ -143,8 +143,9 @@ namespace AsyncNet.Tcp.Client
                     Exception = ex
                 });
 
+#if (NET45 == false)
                 tcpClient.Dispose();
-
+#endif
                 return;
             }
             catch (Exception ex)
@@ -157,8 +158,9 @@ namespace AsyncNet.Tcp.Client
                     Exception = ex
                 });
 
+#if (NET45 == false)
                 tcpClient.Dispose();
-
+#endif
                 return;
             }
 
@@ -168,8 +170,9 @@ namespace AsyncNet.Tcp.Client
             }
             catch (OperationCanceledException ex)
             {
+#if (NET45 == false)
                 tcpClient.Dispose();
-
+#endif
                 this.OnClientStopped(new TcpClientStoppedEventArgs()
                 {
                     ClientStoppedReason = ClientStoppedReason.InitiatingConnectionTimeout,
@@ -182,7 +185,9 @@ namespace AsyncNet.Tcp.Client
             {
                 this.OnClientExceptionOccured(new TcpClientExceptionEventArgs(ex));
 
+#if (NET45 == false)
                 tcpClient.Dispose();
+#endif
 
                 this.OnClientStopped(new TcpClientStoppedEventArgs()
                 {
@@ -272,10 +277,18 @@ namespace AsyncNet.Tcp.Client
 
                 outgoingMessage.SendTaskCompletionSource.TrySetResult(true);
             }
+
+#if NET45
+            catch (OperationCanceledException)
+            {
+                outgoingMessage.SendTaskCompletionSource.TrySetCanceled();
+            }
+#else
             catch (OperationCanceledException ex)
             {
                 outgoingMessage.SendTaskCompletionSource.TrySetCanceled(ex.CancellationToken);
             }
+#endif
             catch (Exception ex)
             {
                 var remoteTcpPeerExceptionEventArgs = new RemoteTcpPeerExceptionEventArgs(outgoingMessage.RemoteTcpPeer, ex);

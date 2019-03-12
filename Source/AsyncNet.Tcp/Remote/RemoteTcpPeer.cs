@@ -222,8 +222,11 @@ namespace AsyncNet.Tcp.Remote
                     {
                         return result;
                     }
-
+#if NET45
+                    using (linkedCts.Token.Register(() => message.SendTaskCompletionSource.TrySetCanceled()))
+#else
                     using (linkedCts.Token.Register(() => message.SendTaskCompletionSource.TrySetCanceled(linkedCts.Token)))
+#endif
                     {
                         result = await message.SendTaskCompletionSource.Task.ConfigureAwait(false);
                     }

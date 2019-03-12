@@ -37,8 +37,12 @@ namespace AsyncNet.Tcp.Client
             this.tcsConnection = new TaskCompletionSource<IAwaitaibleRemoteTcpPeer>();
 
             _ = this.Client.StartAsync(this.cts.Token);
+#if NET45
+            using (var ctr = cancellationToken.Register(() => this.tcsConnection.TrySetCanceled(), false))
 
+#else
             using (var ctr = cancellationToken.Register(() => this.tcsConnection.TrySetCanceled(cancellationToken), false))
+#endif
             {
                 return await this.tcsConnection.Task.ConfigureAwait(false);
             }

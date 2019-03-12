@@ -127,8 +127,10 @@ namespace AsyncNet.Udp.Client
                 this.OnClientStopped(new UdpClientStoppedEventArgs());
 
                 this.SendQueueActionBlock.Complete();
-                this.UdpClient.Dispose();
 
+#if (NET45 == false)
+                this.UdpClient.Dispose();
+#endif
                 return;
             }
             catch (Exception ex)
@@ -138,8 +140,10 @@ namespace AsyncNet.Udp.Client
                 this.OnClientStopped(new UdpClientStoppedEventArgs());
 
                 this.SendQueueActionBlock.Complete();
-                this.UdpClient.Dispose();
 
+#if (NET45 == false)
+                this.UdpClient.Dispose();
+#endif
                 return;
             }
 
@@ -154,8 +158,10 @@ namespace AsyncNet.Udp.Client
                 this.OnClientStopped(new UdpClientStoppedEventArgs());
 
                 this.SendQueueActionBlock.Complete();
-                this.UdpClient.Dispose();
 
+#if (NET45 == false)
+                this.UdpClient.Dispose();
+#endif
                 return;
             }
 
@@ -177,7 +183,10 @@ namespace AsyncNet.Udp.Client
                 this.OnClientStopped(new UdpClientStoppedEventArgs());
 
                 this.SendQueueActionBlock.Complete();
+
+#if (NET45 == false)
                 this.UdpClient.Dispose();
+#endif
             }
         }
 
@@ -332,8 +341,11 @@ namespace AsyncNet.Udp.Client
                     {
                         return result;
                     }
-
+#if NET45
+                    using (linkedCts.Token.Register(() => packet.SendTaskCompletionSource.TrySetCanceled()))
+#else
                     using (linkedCts.Token.Register(() => packet.SendTaskCompletionSource.TrySetCanceled(linkedCts.Token)))
+#endif
                     {
                         result = await packet.SendTaskCompletionSource.Task.ConfigureAwait(false);
                     }
@@ -463,10 +475,18 @@ namespace AsyncNet.Udp.Client
                     packet.SendTaskCompletionSource.TrySetResult(true);
                 }
             }
+
+#if NET45
+            catch (OperationCanceledException)
+            {
+                packet.SendTaskCompletionSource.TrySetCanceled();
+            }
+#else
             catch (OperationCanceledException ex)
             {
                 packet.SendTaskCompletionSource.TrySetCanceled(ex.CancellationToken);
             }
+#endif
             catch (Exception ex)
             {
                 this.OnUdpSendErrorOccured(new UdpSendErrorEventArgs(packet, 0, ex));

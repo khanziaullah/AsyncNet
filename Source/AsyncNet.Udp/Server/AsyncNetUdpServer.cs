@@ -136,7 +136,10 @@ namespace AsyncNet.Udp.Server
                 this.OnServerStopped(new UdpServerStoppedEventArgs());
 
                 this.SendQueueActionBlock.Complete();
+
+#if (NET45 == false)
                 this.UdpClient.Dispose();
+#endif
             }
         }
 
@@ -301,8 +304,11 @@ namespace AsyncNet.Udp.Server
                     {
                         return result;
                     }
-
+#if NET45
+                    using (linkedCts.Token.Register(() => packet.SendTaskCompletionSource.TrySetCanceled()))
+#else
                     using (linkedCts.Token.Register(() => packet.SendTaskCompletionSource.TrySetCanceled(linkedCts.Token)))
+#endif
                     {
                         result = await packet.SendTaskCompletionSource.Task.ConfigureAwait(false);
                     }
@@ -393,10 +399,18 @@ namespace AsyncNet.Udp.Server
                     packet.SendTaskCompletionSource.TrySetResult(true);
                 }
             }
+
+#if NET45
+            catch (OperationCanceledException)
+            {
+                packet.SendTaskCompletionSource.TrySetCanceled();
+            }
+#else
             catch (OperationCanceledException ex)
             {
                 packet.SendTaskCompletionSource.TrySetCanceled(ex.CancellationToken);
             }
+#endif
             catch (Exception ex)
             {
                 this.OnUdpSendErrorOccured(new UdpSendErrorEventArgs(packet, 0, ex));

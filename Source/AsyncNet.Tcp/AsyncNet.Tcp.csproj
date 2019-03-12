@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
     <Description>AsyncNet.Tcp is part of AsyncNet asynchronous networking library. AsyncNet.Tcp is specially designed for dealing with TCP networks</Description>
     <Authors>bartlomiej.stys</Authors>
     <Copyright>© 2019 Bartłomiej Styś</Copyright>
     <Owners>bartlomiej.stys</Owners>
     <PackageTags>asyncnet.tcp async network networking tcp tcpserver tcpclient</PackageTags>
-    <VersionPrefix>1.2.1</VersionPrefix>
-    <PackageReleaseNotes>Awaitaible client improvements</PackageReleaseNotes>
+    <VersionPrefix>1.2.2</VersionPrefix>
+    <PackageReleaseNotes>Added support for .NET framework 4.5 and above</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/bartlomiej-stys/AsyncNet</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

@@ -594,10 +594,17 @@ namespace AsyncNet.Tcp.Server
 
                 outgoingMessage.SendTaskCompletionSource.TrySetResult(true);
             }
+#if NET45
+            catch (OperationCanceledException)
+            {
+                outgoingMessage.SendTaskCompletionSource.TrySetCanceled();
+            }
+#else
             catch (OperationCanceledException ex)
             {
                 outgoingMessage.SendTaskCompletionSource.TrySetCanceled(ex.CancellationToken);
             }
+#endif
             catch (Exception ex)
             {
                 var remoteTcpPeerErrorEventArgs = new RemoteTcpPeerExceptionEventArgs(outgoingMessage.RemoteTcpPeer, ex);

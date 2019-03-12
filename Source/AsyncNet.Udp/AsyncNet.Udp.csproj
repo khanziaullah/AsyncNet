@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
     <Description>AsyncNet.Udp is part of AsyncNet asynchronous networking library. AsyncNet.Udp is specially designed for dealing with UDP networks</Description>
     <Authors>bartlomiej.stys</Authors>
     <Copyright>© 2019 Bartłomiej Styś</Copyright>
     <Owners>bartlomiej.stys</Owners>
     <PackageTags>asyncnet.udp async network networking udp udpserver udpclient</PackageTags>
-    <VersionPrefix>1.2.0</VersionPrefix>
-    <PackageReleaseNotes>Minor enhancements</PackageReleaseNotes>
+    <VersionPrefix>1.2.2</VersionPrefix>
+    <PackageReleaseNotes>Added support for .NET framework 4.5 and above</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/bartlomiej-stys/AsyncNet</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
