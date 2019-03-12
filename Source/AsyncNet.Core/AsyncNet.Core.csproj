@@ -7,8 +7,8 @@
     <Copyright>© 2019 Bartłomiej Styś</Copyright>
     <Owners>bartlomiej.stys</Owners>
     <PackageTags>asyncnet.core async network networking</PackageTags>
-    <VersionPrefix>1.2.2</VersionPrefix>
-    <PackageReleaseNotes>Added support for .NET framework 4.5 and above</PackageReleaseNotes>
+    <VersionPrefix>1.2.3</VersionPrefix>
+    <PackageReleaseNotes>Fixed .NET framework package</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/bartlomiej-stys/AsyncNet</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
