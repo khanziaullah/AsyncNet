@@ -7,13 +7,15 @@
     <Copyright>© 2019 Bartłomiej Styś</Copyright>
     <Owners>bartlomiej.stys</Owners>
     <PackageTags>asyncnet.tcp async network networking tcp tcpserver tcpclient</PackageTags>
-    <VersionPrefix>1.2.3</VersionPrefix>
-    <PackageReleaseNotes>Fixed .NET framework package</PackageReleaseNotes>
+    <VersionPrefix>1.2.4</VersionPrefix>
+    <PackageReleaseNotes>Signed</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/bartlomiej-stys/AsyncNet</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <LangVersion>7.3</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>AsyncNet.Tcp.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
