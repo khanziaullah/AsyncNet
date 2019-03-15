@@ -21,6 +21,7 @@ namespace AsyncNet.Tcp.Remote
         private readonly ActionBlock<RemoteTcpPeerOutgoingMessage> sendQueue;
         private readonly CancellationTokenSource cancellationTokenSource;
         private readonly Action<RemoteTcpPeerExceptionEventArgs> exceptionHandler;
+        private readonly CancellationToken cancellationToken;
 
         private ConnectionCloseReason connectionCloseReason;
         private Func<IRemoteTcpPeer, IProtocolFrameDefragmenter> protocolFrameDefragmenterFactory;
@@ -39,6 +40,7 @@ namespace AsyncNet.Tcp.Remote
             this.IPEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
             this.sendQueue = sendQueue;
             this.cancellationTokenSource = cts;
+            this.cancellationToken = cts.Token;
             this.exceptionHandler = exceptionHandler;
         }
 
@@ -56,6 +58,7 @@ namespace AsyncNet.Tcp.Remote
             this.IPEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
             this.sendQueue = sendQueue;
             this.cancellationTokenSource = cts;
+            this.cancellationToken = cts.Token;
             this.exceptionHandler = exceptionHandler;
         }
 
@@ -134,7 +137,7 @@ namespace AsyncNet.Tcp.Remote
         {
             bool result;
 
-            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationTokenSource.Token, cancellationToken))
+            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationToken, cancellationToken))
             {
                 try
                 {
@@ -142,14 +145,14 @@ namespace AsyncNet.Tcp.Remote
                         new RemoteTcpPeerOutgoingMessage(
                             this,
                             new AsyncNetBuffer(buffer, offset, count),
-                            this.cancellationTokenSource.Token),
+                            this.cancellationToken),
                         linkedCts.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
                     if (cancellationToken.IsCancellationRequested)
                     {
-                        if (!this.cancellationTokenSource.IsCancellationRequested)
+                        if (!this.cancellationToken.IsCancellationRequested)
                         {
                             throw;
                         }
@@ -207,7 +210,7 @@ namespace AsyncNet.Tcp.Remote
         {
             bool result;
 
-            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationTokenSource.Token, cancellationToken))
+            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationToken, cancellationToken))
             {
                 var message = new RemoteTcpPeerOutgoingMessage(
                                 this,
@@ -235,7 +238,7 @@ namespace AsyncNet.Tcp.Remote
                 {
                     if (cancellationToken.IsCancellationRequested)
                     {
-                        if (!this.cancellationTokenSource.IsCancellationRequested)
+                        if (!this.cancellationToken.IsCancellationRequested)
                         {
                             throw;
                         }
@@ -267,7 +270,7 @@ namespace AsyncNet.Tcp.Remote
             return this.sendQueue.Post(new RemoteTcpPeerOutgoingMessage(
                             this,
                             new AsyncNetBuffer(buffer, offset, count),
-                            this.cancellationTokenSource.Token));
+                            this.cancellationToken));
         }
 
         public virtual void Dispose()
@@ -277,6 +280,7 @@ namespace AsyncNet.Tcp.Remote
             try
             {
                 this.CustomObject?.Dispose();
+                this.cancellationTokenSource.Dispose();
             }
             catch (Exception ex)
             {

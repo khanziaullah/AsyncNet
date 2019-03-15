@@ -300,8 +300,8 @@ namespace AsyncNet.Tcp.Client
         protected virtual async Task HandleTcpClientAsync(TcpClient tcpClient, CancellationToken token)
         {
             using (tcpClient)
-            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
+                var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token); // remote tcp peer controls linkedCts lifetime
                 var sendQueue = this.CreateSendQueueActionBlock(linkedCts.Token);
 
                 RemoteTcpPeer remoteTcpPeer;
@@ -337,6 +337,8 @@ namespace AsyncNet.Tcp.Client
                         Exception = ex
                     });
 
+                    linkedCts.Dispose();
+
                     return;
                 }
                 catch (Exception ex)
@@ -348,6 +350,8 @@ namespace AsyncNet.Tcp.Client
                         ClientStoppedReason = ClientStoppedReason.RuntimeException,
                         Exception = ex
                     });
+
+                    linkedCts.Dispose();
 
                     return;
                 }
