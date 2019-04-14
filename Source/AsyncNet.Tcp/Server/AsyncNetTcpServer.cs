@@ -339,6 +339,8 @@ namespace AsyncNet.Tcp.Server
             {
                 try
                 {
+                    this.Config.ConfigureTcpListenerPendingCallback?.Invoke(tcpListener);
+
                     var tcpClient = await AcceptTcpClient(tcpListener, token).ConfigureAwait(false);
 
                     this.HandleNewTcpClientAsync(tcpClient, token);

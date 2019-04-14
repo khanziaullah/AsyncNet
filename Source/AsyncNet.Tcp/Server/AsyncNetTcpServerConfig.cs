@@ -23,6 +23,8 @@ namespace AsyncNet.Tcp.Server
 
         public Action<TcpListener> ConfigureTcpListenerCallback { get; set; }
 
+        public Action<TcpListener> ConfigureTcpListenerPendingCallback { get; set; }
+
         public bool UseSsl { get; set; }
 
         public X509Certificate X509Certificate { get; set; }
